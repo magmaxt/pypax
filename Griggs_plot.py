@@ -69,7 +69,7 @@ for i in range(nod):
     # calculate theoretical strain
     strain_theory = epsilon_dot_theory * model_time
     #print("model time is:", model_time[0], 's','and',model_time[0]/sec_in_day,'days')
-    print(f"Model time is: {int(model_time[0])} s and {int(model_time[0] /
+    print(f"Model time is: {int(model_time[0])} s and {int(model_time[0] /sec_in_day)} days")
 
     # To find the spatial bounds of the domain
     bounds = mesh.bounds
@@ -102,21 +102,23 @@ for i in range(nod):
     stressII_masked.set_mask(sample_mask)
     strainrateII_masked.set_mask(sample_mask)
 
-    # -------- FIGURE --------
+# -------- FIGURE --------
+# flow rule theoretical parameters:
 
-    fig = plt.figure()
-    ax  = fig.add_subplot(111)
-    ax.set_title('model: '+exp_name)
-    cmap = ax.scatter(stressII_masked.data,strainrateII_masked.data,c=sample_purity.data,s=2,cmap=plt.cm.magma,zorder=1)
-    ax.scatter(np.mean(stressII_masked.data),np.mean(strainrateII_masked.data),s=100,color='red',alpha=1,label='mean')
-    cbar = fig.colorbar(cmap,orientation='vertical',shrink=0.5,label='sample purity')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$\sigma_{II}^s$ (Pa)')
-    ax.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$')
-    ax.legend(fontsize=9)
-    fig.tight_layout()
-    plt.show()
+
+fig = plt.figure()
+ax  = fig.add_subplot(111)
+ax.set_title('model: '+exp_name)
+cmap = ax.scatter(stressII_masked.data,strainrateII_masked.data,c=sample_purity.data,s=2,cmap=plt.cm.magma,zorder=1)
+ax.scatter(np.mean(stressII_masked.data),np.mean(strainrateII_masked.data),s=100,color='red',alpha=1,label='mean')
+cbar = fig.colorbar(cmap,orientation='vertical',shrink=0.5,label='sample purity')
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel(r'$\sigma_{II}^s$ (Pa)')
+ax.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$')
+ax.legend(fontsize=9)
+fig.tight_layout()
+plt.show()
 
 
 
