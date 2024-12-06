@@ -14,7 +14,7 @@ from mesh import Volume
 
 #genpath = '/home/alexandre/Alexandre/BibliothekaAlexandrina/11-Griggs-X-A/ASPECT/RUNs/241103-T1473-V2e-16/'
 genpath = '/Users/tian_bc/Documents/2024-LC_delamination/Model_results/GriggsExp/Peloton_lc/241201/'
-folder_name='241201-T1273-V2e-6_corrected/'
+folder_name='241201-T1073-V2e-6_corrected/'
 
 genpath2mesh = genpath + folder_name+ 'solution/solution-%s.pvtu'   
 genpath2part = genpath + folder_name+'particles/particles-%s.pvtu'
@@ -27,11 +27,11 @@ sec_in_day = 24*3600 # seconds in a day
 
 
 # Time steps
-timesteps = np.array([70])
+timesteps = np.array([67])
 
 # theoretical strain rates
 sampleH = 0.0006 #meter (half thickness of the sample)
-V_shear = 2.0e-9 # shear velocity m/s
+V_shear = 2e-9 #2.0e-9 # shear velocity m/s
 epsilon_dot_theory = V_shear/(2*sampleH)
 # theoretical strain
 
@@ -186,6 +186,11 @@ stress_theory = np.logspace(0,20,num=21,base=10,endpoint=True)
 strainrate_theory = A * stress_theory**n * np.exp(-Q/(R*T)) 
 
 strainrate_theory_newtonian = A * stress_theory**1 * np.exp(-Q/(R*T))  * 5e20
+
+T = 1073 # K
+strainrate_theory_loc = A * stress_theory**n * np.exp(-Q/(R*T)) 
+strainrate_theory_newtonian_loc = A * stress_theory**1 * np.exp(-Q/(R*T))  * 5e20
+
 #eta = A**(-1/n) * np.exp(Q/(n*R*T)) * epsilon**((1-n)/n)    /2 # * 1e6
 
 #mean for all points
@@ -198,7 +203,7 @@ mean_strainrate=np.mean(strainrateII_masked.data)
 
 # plotting particle locations
 figure = plt.figure(constrained_layout=True)
-figure.set_size_inches(7, 7)
+figure.set_size_inches(9, 9)
 ax = figure.add_gridspec(1, 1)
 f2 = figure.add_subplot(ax[:, :])
 
@@ -207,19 +212,19 @@ f2 = figure.add_subplot(ax[:, :])
 f2.tick_params(axis='x', labelsize=22)  # X-axis tick font size
 f2.tick_params(axis='y', labelsize=22)  # Y-axis tick font size
 
-f2.set_xlabel('X', fontsize=22)
-f2.set_ylabel('Z', fontsize=22, color='k')
-f2.set_title(
-    f'model: {exp_name} \n @ {int(model_time[0] / sec_in_day)} days and strain of {strain_theory[0]:.1f}\n'
-    + f'mean strain rate: {mean_strainrate:.2e} ' + r'$\mathrm{s^{-1}}$' + f', mean stress: {mean_stress:.2e} Pa'
-)
-
 # Theory plot dislocation n=3.5
 f2.loglog(stress_theory, strainrate_theory, 
-          'r--', label='dislocation creep from Zhang et al., 2006')
+          'r--', label='dislocation creep \n Zhang et al., 2006; T=1273K')
 # Theory plot newtonian n=1
 f2.loglog(stress_theory, strainrate_theory_newtonian, 
-          'b--', label='diffusion creep')
+          'b--', label='diffusion creep; T=1273K')
+
+# Theory plot dislocation n=3.5
+f2.loglog(stress_theory, strainrate_theory_loc, 
+          'r-', label='dislocation creep \n Zhang et al., 2006; T=1073K')
+# Theory plot newtonian n=1
+# f2.loglog(stress_theory, strainrate_theory_newtonian_loc, 
+#           'b-', label='diffusion creep; T=1073K')
 
 # Scatter plot with sample purity as the color
 scatter = f2.scatter(
@@ -232,45 +237,56 @@ scatter = f2.scatter(
 )
 
 # Add a colorbar
-cbar = figure.colorbar(scatter, ax=f2, orientation='vertical', shrink=0.7)
+cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.3)
 cbar.set_label('Sample Purity', fontsize=16)
 
 # Additional scatter plots
 #mean plot for all points
-f2.scatter(mean_stress, mean_strainrate, s=800, color='black', alpha=1, label='mean', marker='*')
+f2.scatter(mean_stress, mean_strainrate, s=2000, color='black', alpha=1, label='mean all', marker='*')
 # plot for neighbors of the mid-particle
 f2.scatter(
     stressII_masked_particle.data, 
     strainrateII_masked_particle.data,
-    s=600, 
+    s=900, 
     color='red', 
-    alpha=.1, 
+    alpha=.9, 
     label='mid-particle neighbors', 
     marker='+', 
     zorder=3
 )
 # plot for mean of neighbors of the mid-particle
 #mean for all points
-mean_stress_mid_particle=np.median(stressII_masked_particle.data)
-mean_strainrate_mid_particle=np.median(strainrateII_masked_particle.data)
+mean_stress_mid_particle=np.mean(stressII_masked_particle.data)
+mean_strainrate_mid_particle=np.mean(strainrateII_masked_particle.data)
 f2.scatter(mean_stress_mid_particle, mean_strainrate_mid_particle,
-            s=2222, color='red', alpha=.3, label='median parti', marker='o',zorder=2)
+            s=2222, color='red', alpha=.3, label='mean mid-parti', marker='o',zorder=2)
 
 
 # Log scale and labels
 f2.set_xscale('log')
 f2.set_yscale('log')
-f2.set_xlabel(r'$\sigma_{II}^s$ (Pa)', fontsize=16)
-f2.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$', fontsize=16)
-
+f2.set_xlabel(r'$\sigma_{II}^s$ (Pa)', fontsize=22)
+f2.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$', fontsize=22)
+f2.set_title(
+    f'model: {exp_name} \n @ {(model_time[0] / sec_in_day):.1f} days and strain of {strain_theory[0]:.1f}\n' +
+    f'mean strain rate: {mean_strainrate_mid_particle:.2e} ' +
+    r'$\mathrm{s^{-1}}$' + f', mean stress: {mean_stress_mid_particle:.2e} Pa \n' +
+    f'effective viscosity near mid-parti: {mean_stress_mid_particle/mean_strainrate_mid_particle:.1e} Pa*s'
+    ,fontsize=16
+)
 # Legends, limits, and grid
-f2.legend(fontsize=9)
+f2.legend(fontsize=12,loc='lower right')
+#f2.legend(fontsize=12,loc='upper left')
+
 f2.set_xlim([1e8, 1e10])
 f2.set_ylim([1e-7, 1e-5])
+# f2.set_ylim([1e-7/10, 1e-5/10]) #V2e-5
+# f2.set_ylim([1e-7*10, 1e-5*10]) #V2e-5
+
 f2.grid()
 
-f2.set_xlim([1e8/10, 1e10*10])
-f2.set_ylim([1e-7/10, 1e-5*10])
+# f2.set_xlim([1e8/10, 1e10*10])
+# f2.set_ylim([1e-7/10, 1e-5*10])
 
 # # Show the plot
 # plt.show()
