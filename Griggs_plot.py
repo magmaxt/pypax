@@ -54,9 +54,17 @@ for i in range(nod):
 
     path2mesh = genpath2mesh%timestep
     mesh = pv.read(path2mesh)
+    # Print available data arrays
+    print("mesh Point Data Arrays:", mesh.point_data.keys())
+    print("mesh Cell Data Arrays:", mesh.cell_data.keys())
+    print("mesh Field Data Arrays:", mesh.field_data.keys())
 
     path2part = genpath2part%timestep
     particles = pv.read(path2part)
+    print("particles Point Data Arrays:", particles.point_data.keys())
+    print("particles Cell Data Arrays:", particles.cell_data.keys())
+    print("particles Field Data Arrays:", particles.field_data.keys())
+
 
     # -------- PROCESS THE MESH --------
 
@@ -91,8 +99,25 @@ for i in range(nod):
     # -------- COMPUTE AND PROCESS THE MESH DATA --------
 
     sample_mask = sample.data > 0.90
+    print(f'for sample mask: total {sum(sample_mask)} of filtered points ')
+
     #sample_mask = sample_mask * np.logical_and(sample.x > 0, sample.x < 0.0015)
-    sample_mask = sample_mask * np.logical_and(sample.x > 0, sample.x < 0.0015)
+    #sample_mask = sample_mask * np.logical_and(sample.x > 0, sample.x < 0.0015)
+    
+    #loc_threshold_r = sampleH/4 #5e-4 #5e-5
+    # for i in range(5):
+    #     sample_mask +=  ((sample.x - particles.points[i,0])**2+
+    #                 (sample.y - particles.points[i,1])**2+
+    #                 (sample.z - particles.points[i,2])**2 <= loc_threshold_r**2)            
+    #     # sample_mask =  np.logical_or(sample_mask , 
+    #     #         # np.logical_and(
+    #     #         #     sample.data > 0.9,
+    #     #             (sample.x - particles.points[i,0])**2+
+    #     #             (sample.y - particles.points[i,1])**2+
+    #     #             (sample.z - particles.points[i,2])**2 <= loc_threshold_r**2
+    #     #         #)
+    #     #     )
+    #     print(f'for sample mask: total {sum(sample_mask)} of filtered points ')
 
     sample_purity = sample.copy()
     sample_purity.set_mask(sample_mask)
@@ -102,6 +127,52 @@ for i in range(nod):
 
     stressII_masked.set_mask(sample_mask)
     strainrateII_masked.set_mask(sample_mask)
+
+    
+    #plotting particle locations
+    figure = plt.figure(constrained_layout=True)
+    figure.set_size_inches(3,3)
+    ax = figure.add_gridspec(1,1)
+    f1 = figure.add_subplot(ax[:,:])
+    f1.yaxis.label.set_size(22)
+    f1.xaxis.label.set_size(22)
+    f1.set_xlabel('X',fontsize=22)
+    f1.set_ylabel('Z',fontsize=22, color='k')
+    for i in range(5):
+        f1.plot(particles.points[i,0],particles.points[i,2],'.',label=f'{i}')
+        # this show that a specific particle are not always listed at the same sequence
+    #find middle particle
+    ind_mid_particle = np.where(particles.points[:,0]==np.median(particles.points[:,0]))[0][0]
+    f1.plot(particles.points[ind_mid_particle,0],particles.points[ind_mid_particle,2],'ko',label='mid',zorder=0)
+    f1.legend()
+    f1.grid()
+    f1.set_xlim([-0.003,0.003])
+    f1.set_ylim([-0.0045,0.0065])
+    
+    # get mid particle location data
+    # particle_mask = sample.data > 0.9
+    # loc_threshold = 5e-4 #5e-5
+    # particle_mask = particle_mask * np.logical_and(
+    #     abs(sample.x - particles.points[ind_mid_particle,0])<loc_threshold,
+    #     abs(sample.y - particles.points[ind_mid_particle,1])<loc_threshold,
+    #     abs(sample.z - particles.points[ind_mid_particle,2])<loc_threshold,
+    #     )
+ 
+    loc_threshold_r = sampleH/2 #5e-4 #5e-5
+    particle_mask =  np.logical_and(sample.data > 0.9,
+        (sample.x - particles.points[ind_mid_particle,0])**2+
+        (sample.y - particles.points[ind_mid_particle,1])**2+
+        (sample.z - particles.points[ind_mid_particle,2])**2 <= loc_threshold_r**2
+        )
+    print(f'for particle mask: total {sum(particle_mask)} of filtered points ')
+
+
+    stressII_masked_particle = stressII.copy()
+    strainrateII_masked_particle = strainrateII.copy()
+
+    stressII_masked_particle.set_mask(particle_mask)
+    strainrateII_masked_particle.set_mask(particle_mask)
+
 
 # -------- FIGURE --------
 # flow rule theoretical parameters:
@@ -117,55 +188,89 @@ strainrate_theory = A * stress_theory**n * np.exp(-Q/(R*T))
 strainrate_theory_newtonian = A * stress_theory**1 * np.exp(-Q/(R*T))  * 5e20
 #eta = A**(-1/n) * np.exp(Q/(n*R*T)) * epsilon**((1-n)/n)    /2 # * 1e6
 
-#mean
+#mean for all points
+# mean_stress=np.mean(stressII_masked.data)
+# mean_strainrate=np.mean(strainrateII_masked.data)
+
+#median for all points
 mean_stress=np.mean(stressII_masked.data)
 mean_strainrate=np.mean(strainrateII_masked.data)
 
-fig = plt.figure()
-ax  = fig.add_subplot(111)
-ax.set_title(
+# plotting particle locations
+figure = plt.figure(constrained_layout=True)
+figure.set_size_inches(7, 7)
+ax = figure.add_gridspec(1, 1)
+f2 = figure.add_subplot(ax[:, :])
+
+# Axis labels and title
+# Adjust tick number font size
+f2.tick_params(axis='x', labelsize=22)  # X-axis tick font size
+f2.tick_params(axis='y', labelsize=22)  # Y-axis tick font size
+
+f2.set_xlabel('X', fontsize=22)
+f2.set_ylabel('Z', fontsize=22, color='k')
+f2.set_title(
     f'model: {exp_name} \n @ {int(model_time[0] / sec_in_day)} days and strain of {strain_theory[0]:.1f}\n'
     + f'mean strain rate: {mean_strainrate:.2e} ' + r'$\mathrm{s^{-1}}$' + f', mean stress: {mean_stress:.2e} Pa'
 )
 
-# theory plot dislocation n=3.5
-ax.loglog(stress_theory,strainrate_theory,'r--',label='dislocation creep from Zhang et al., 2006')
-# theory plot newtonian n=1
-ax.loglog(stress_theory,strainrate_theory_newtonian,'b--',label='diffusion creep')
+# Theory plot dislocation n=3.5
+f2.loglog(stress_theory, strainrate_theory, 
+          'r--', label='dislocation creep from Zhang et al., 2006')
+# Theory plot newtonian n=1
+f2.loglog(stress_theory, strainrate_theory_newtonian, 
+          'b--', label='diffusion creep')
 
-cmap = ax.scatter(stressII_masked.data,strainrateII_masked.data,c=sample_purity.data,s=33,cmap=plt.cm.magma,zorder=2)
-ax.scatter(mean_stress,mean_strainrate,s=100,color='red',alpha=1,label='mean')
+# Scatter plot with sample purity as the color
+scatter = f2.scatter(
+    stressII_masked.data, 
+    strainrateII_masked.data, 
+    c=sample_purity.data, 
+    s=33, 
+    cmap=plt.cm.magma, 
+    zorder=2
+)
+
+# Add a colorbar
+cbar = figure.colorbar(scatter, ax=f2, orientation='vertical', shrink=0.7)
+cbar.set_label('Sample Purity', fontsize=16)
+
+# Additional scatter plots
+#mean plot for all points
+f2.scatter(mean_stress, mean_strainrate, s=800, color='black', alpha=1, label='mean', marker='*')
+# plot for neighbors of the mid-particle
+f2.scatter(
+    stressII_masked_particle.data, 
+    strainrateII_masked_particle.data,
+    s=600, 
+    color='red', 
+    alpha=.1, 
+    label='mid-particle neighbors', 
+    marker='+', 
+    zorder=3
+)
+# plot for mean of neighbors of the mid-particle
+#mean for all points
+mean_stress_mid_particle=np.median(stressII_masked_particle.data)
+mean_strainrate_mid_particle=np.median(strainrateII_masked_particle.data)
+f2.scatter(mean_stress_mid_particle, mean_strainrate_mid_particle,
+            s=2222, color='red', alpha=.3, label='median parti', marker='o',zorder=2)
 
 
+# Log scale and labels
+f2.set_xscale('log')
+f2.set_yscale('log')
+f2.set_xlabel(r'$\sigma_{II}^s$ (Pa)', fontsize=16)
+f2.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$', fontsize=16)
 
+# Legends, limits, and grid
+f2.legend(fontsize=9)
+f2.set_xlim([1e8, 1e10])
+f2.set_ylim([1e-7, 1e-5])
+f2.grid()
 
+f2.set_xlim([1e8/10, 1e10*10])
+f2.set_ylim([1e-7/10, 1e-5*10])
 
-
-cbar = fig.colorbar(cmap,orientation='vertical',shrink=0.5,label='sample purity')
-ax.set_xscale('log')
-ax.set_yscale('log')
-ax.set_xlabel(r'$\sigma_{II}^s$ (Pa)')
-ax.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$')
-ax.legend(fontsize=9)
-fig.tight_layout()
-
-
-
-
-# plt.xlim([np.mean(stressII_masked.data)*0.1,np.mean(stressII_masked.data)*10])
-# plt.ylim([np.mean(strainrateII_masked.data)*0.1,np.mean(strainrateII_masked.data)*10])
-
-plt.xlim([1e8,1e10])
-plt.ylim([1e-7,1e-5])
-
-# # more relaxed
-# plt.xlim([1e7,1e11])
-# plt.ylim([1e-8,1e-4])
-plt.grid()
-
-plt.show()
-
-
-
-
-
+# # Show the plot
+# plt.show()
