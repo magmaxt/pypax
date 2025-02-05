@@ -11,7 +11,7 @@ genpath2part = genpath + folder_name + 'particles/particles-%s.pvtu'
 exp_name = folder_name
 sec_in_yr = 365 * 24 * 3600
 sec_in_day = 24 * 3600
-timesteps = np.array([150])
+timesteps = np.array([110])
 sampleH = 0.0006
 V_shear = 2e-16
 epsilon_dot_theory = V_shear / (2 * sampleH)
@@ -43,7 +43,7 @@ for i in range(nod):
     sample = Volume(points, sample_array)
 
     # Compute and process the mesh data
-    sample_mask = sample.data > 0.850
+    sample_mask = sample.data > 0.10
     sample_purity = sample.copy()
     sample_purity.set_mask(sample_mask)
     stressII_masked = stressII.copy()
@@ -73,16 +73,6 @@ for i in range(nod):
 
     stressII_masked_particle = stressII.copy()
     strainrateII_masked_particle = strainrateII.copy()
-    # stressII_masked_particle0 = stressII.copy()
-    # strainrateII_masked_particle0 = strainrateII.copy()
-    # stressII_masked_particle1 = stressII.copy()
-    # strainrateII_masked_particle1 = strainrateII.copy()
-    # stressII_masked_particle2 = stressII.copy()
-    # strainrateII_masked_particle2 = strainrateII.copy()
-    # stressII_masked_particle3 = stressII.copy()
-    # strainrateII_masked_particle3 = strainrateII.copy()
-    # stressII_masked_particle4 = stressII.copy()
-    # strainrateII_masked_particle4 = strainrateII.copy()
     stressII_masked_particle_list = []
     strainrateII_masked_particle_list =[]
     for i in range(5):
@@ -90,7 +80,7 @@ for i in range(nod):
         strainrateII_masked_particle_list.append(strainrateII.copy())
 
     loc_threshold_r = sampleH / 5
-    particle_mask = np.logical_and(sample.data > 0.85,
+    particle_mask = np.logical_and(sample.data > 0.1,
                                    (sample.x - particles.points[ind_mid_particle, 0]) ** 2 +
                                    (sample.y - particles.points[ind_mid_particle, 1]) ** 2 +
                                    (sample.z - particles.points[ind_mid_particle, 2]) ** 2 <= loc_threshold_r ** 2)
@@ -101,7 +91,7 @@ for i in range(nod):
     particle_mask_list = []
     for i in range(5):
         particle_mask_list.append(
-            np.logical_and(sample.data > 0.85,
+            np.logical_and(sample.data > 0.1,
                                    (sample.x - particles.points[i, 0]) ** 2 +
                                    (sample.y - particles.points[i, 1]) ** 2 +
                                    (sample.z - particles.points[i, 2]) ** 2 <= loc_threshold_r ** 2)
@@ -109,48 +99,6 @@ for i in range(nod):
         print(f'for particle mask {i}: total {sum(particle_mask_list[i])} of filtered points ')
         stressII_masked_particle_list[i].set_mask(particle_mask_list[i])
         strainrateII_masked_particle_list[i].set_mask(particle_mask_list[i])
-
-    # particle_mask0 = np.logical_and(sample.data > 0.85,
-    #                                (sample.x - particles.points[0, 0]) ** 2 +
-    #                                (sample.y - particles.points[0, 1]) ** 2 +
-    #                                (sample.z - particles.points[0, 2]) ** 2 <= loc_threshold_r ** 2)
-    # print(f'for particle mask 0: total {sum(particle_mask0)} of filtered points ')
-    # stressII_masked_particle0.set_mask(particle_mask0)
-    # strainrateII_masked_particle0.set_mask(particle_mask0)
-
-    # particle_mask1 = np.logical_and(sample.data > 0.85,
-    #                                (sample.x - particles.points[1, 0]) ** 2 +
-    #                                (sample.y - particles.points[1, 1]) ** 2 +
-    #                                (sample.z - particles.points[1, 2]) ** 2 <= loc_threshold_r ** 2)
-    # print(f'for particle mask 1: total {sum(particle_mask1)} of filtered points ')
-    # stressII_masked_particle1.set_mask(particle_mask1)
-    # strainrateII_masked_particle1.set_mask(particle_mask1)
-
-    # particle_mask2 = np.logical_and(sample.data > 0.85,
-    #                                (sample.x - particles.points[2, 0]) ** 2 +
-    #                                (sample.y - particles.points[2, 1]) ** 2 +
-    #                                (sample.z - particles.points[2, 2]) ** 2 <= loc_threshold_r ** 2)
-    # print(f'for particle mask 2: total {sum(particle_mask2)} of filtered points ')
-    # stressII_masked_particle2.set_mask(particle_mask2)
-    # strainrateII_masked_particle2.set_mask(particle_mask2)
-
-    # particle_mask3 = np.logical_and(sample.data > 0.85,
-    #                                (sample.x - particles.points[3, 0]) ** 2 +
-    #                                (sample.y - particles.points[3, 1]) ** 2 +
-    #                                (sample.z - particles.points[3, 2]) ** 2 <= loc_threshold_r ** 2)
-    # print(f'for particle mask 3: total {sum(particle_mask3)} of filtered points ')
-    # stressII_masked_particle3.set_mask(particle_mask3)
-    # strainrateII_masked_particle3.set_mask(particle_mask3)
-
-    # particle_mask4 = np.logical_and(sample.data > 0.85,
-    #                                (sample.x - particles.points[4, 0]) ** 2 +
-    #                                (sample.y - particles.points[4, 1]) ** 2 +
-    #                                (sample.z - particles.points[4, 2]) ** 2 <= loc_threshold_r ** 2)
-    # print(f'for particle mask 4: total {sum(particle_mask4)} of filtered points ')
-    # stressII_masked_particle4.set_mask(particle_mask4)
-    # strainrateII_masked_particle4.set_mask(particle_mask4)
-
-
 
     # Flow rule theoretical parameters
     A = 1e-23
@@ -185,7 +133,7 @@ for i in range(nod):
 
     # Scatter plot with sample purity as the color
     scatter = f2.scatter(stressII_masked.data, strainrateII_masked.data, c=sample_purity.data, s=33, cmap=plt.cm.magma, zorder=2)
-    cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.3)
+    cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.1)
     cbar.set_label('Sample Purity', fontsize=16)
 
     # Additional scatter plots
@@ -243,7 +191,7 @@ cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_title('Filtered 3D Sample Points (Purity > 0.85, Distance to Theory)')
+ax.set_title('Filtered 3D Sample Points (Purity > 0.1, Distance to Theory)')
 plt.show()
 
 
@@ -259,12 +207,14 @@ sc = ax.scatter(
     marker='o',
     s=1
 )
+for i in range(5):
+        ax.plot(particles.points[i, 0], particles.points[i, 2], 'o', label=f'{i}', color=colors[i % len(colors)],markersize=12)
 # Add colorbar
 cbar = plt.colorbar(sc, ax=ax, label='log_strainrate')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_title('Filtered 3D Sample Points (Purity > 0.85, strain rate)')
+ax.set_title('Filtered 3D Sample Points (Purity > 0.1, strain rate)')
 plt.show()
 
 # Cross-section plot at Y=0
@@ -279,6 +229,8 @@ sc = ax.scatter(
     marker='o',
     s=10
 )
+for i in range(5):
+        ax.plot(particles.points[i, 0], particles.points[i, 2], 'o', label=f'{i}', color=colors[i % len(colors)],markersize=12)
 # Add colorbar
 cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
 ax.set_xlabel('X')
@@ -339,4 +291,99 @@ cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_title('Cross-Section X-Y with all Z')
+plt.show()
+
+
+
+#
+pl=pv.Plotter()
+# pl.add_mesh(mesh)
+# pl.show_grid()
+# pl.show()
+
+#pl.add_mesh(mesh.outline())
+pl.add_mesh_slice(mesh, normal=[1,0,0])
+pl.show()
+
+
+# Cross-section plot at Y=0
+fig, ax = plt.subplots(figsize=(8, 6))
+cross_section_mask = np.abs(points[sample_mask, 1]) < 1e-5  # Points close to Y=0
+# Scatter plot for the cross-section
+sc = ax.scatter(
+    points[sample_mask][cross_section_mask, 0], 
+    points[sample_mask][cross_section_mask, 2], 
+    c=distance_norm[cross_section_mask], 
+    cmap='viridis',  # Use 'viridis' or 'plasma' for better contrast
+    marker='o',
+    s=10
+)
+
+ax.scatter(mesh.points[:, 0], mesh.points[:, 2], color='grey', alpha=0.1, label='Mesh grid', s=1)
+# Add colorbar
+cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
+ax.set_xlabel('X')
+ax.set_ylabel('Z')
+ax.set_title('Cross-Section at Y=0')
+plt.show()
+
+# distance from flow law   -----   sample purity    colored by strain rate
+fig, ax = plt.subplots(figsize=(8, 6))
+#ax.plot(sample_purity.data,distance_norm,'.')
+ax.set_xlabel('sample purity')
+ax.set_ylabel('strain rate')
+sc = ax.scatter(sample_purity.data,strainrateII_masked.data,  c= distance_norm, s=3, cmap=plt.cm.magma, zorder=2)
+cbar = plt.colorbar(sc, ax=ax, orientation='vertical', shrink=0.1)
+cbar.set_label('distance_norm', fontsize=16)
+
+# binned plot for above
+# Create the figure and axis
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Scatter plot
+sc = ax1.scatter(sample_purity.data, distance_norm, c=strainrateII_masked.data, s=3, cmap=plt.cm.magma, zorder=2)
+ax1.set_xlabel('Sample Purity')
+ax1.set_ylabel('Distance Norm')
+cbar = plt.colorbar(sc, ax=ax1, orientation='vertical', shrink=0.1)
+cbar.set_label('Strain Rate', fontsize=16)
+
+# Create bins for sample purity with a window of 0.05
+bins = np.arange(sample_purity.data.min(), sample_purity.data.max() + 0.05, 0.05)
+
+# Group distance_norm based on the bins
+grouped_data = []
+bin_centers = []
+bin_means = []
+for i in range(len(bins) - 1):
+    mask = (sample_purity.data >= bins[i]) & (sample_purity.data < bins[i + 1])
+    if np.sum(mask) > 0:  # Only include bins with data
+        grouped_data.append(distance_norm[mask])
+        bin_centers.append((bins[i] + bins[i + 1]) / 2)  # Center of the bin
+        bin_means.append(np.mean(distance_norm[mask]))  # Mean of the bin
+
+# Plot the box plot on top of the scatter plot
+boxplot = ax1.boxplot(
+    grouped_data,
+    positions=bin_centers,  # Use bin centers for x-axis positions
+    widths=0.04,  # Adjust width of boxes
+    patch_artist=True,  # Allow filling boxes with color
+    boxprops=dict(facecolor='lightblue', alpha=0.1),  # Make boxes semi-transparent
+    flierprops=dict(marker='o', markerfacecolor='black', markersize=2, markeredgecolor='black'),  # Customize outliers
+    zorder=1  # Ensure boxes are behind the scatter plot
+)
+
+# Highlight the mean with a large marker
+ax1.scatter(bin_centers, bin_means, color='red', s=100, marker='D', label='Mean', zorder=3)
+
+# Format x-axis to one decimal point
+ax1.tick_params(axis='x', labelrotation=45)
+ax1.xaxis.set_major_formatter(plt.FormatStrFormatter('%.2f'))
+
+# Adjust x-axis limits to fit the data
+ax1.set_xlim(left=min(bin_centers) - 0.05, right=max(bin_centers) + 0.05)
+
+# Add a legend
+ax1.legend(loc='upper right')
+
+plt.tight_layout()
 plt.show()
