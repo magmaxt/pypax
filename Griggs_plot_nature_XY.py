@@ -11,7 +11,7 @@ genpath2part = genpath + folder_name + 'particles/particles-%s.pvtu'
 exp_name = folder_name
 sec_in_yr = 365 * 24 * 3600
 sec_in_day = 24 * 3600
-timesteps = np.array([110])
+timesteps = np.array([100])
 sampleH = 0.0006
 V_shear = 2e-16
 epsilon_dot_theory = V_shear / (2 * sampleH)
@@ -43,7 +43,7 @@ for i in range(nod):
     sample = Volume(points, sample_array)
 
     # Compute and process the mesh data
-    sample_mask = sample.data > 0.10
+    sample_mask = sample.data > 0.8
     sample_purity = sample.copy()
     sample_purity.set_mask(sample_mask)
     stressII_masked = stressII.copy()
@@ -80,7 +80,7 @@ for i in range(nod):
         strainrateII_masked_particle_list.append(strainrateII.copy())
 
     loc_threshold_r = sampleH / 5
-    particle_mask = np.logical_and(sample.data > 0.1,
+    particle_mask = np.logical_and(sample.data > 0.9,
                                    (sample.x - particles.points[ind_mid_particle, 0]) ** 2 +
                                    (sample.y - particles.points[ind_mid_particle, 1]) ** 2 +
                                    (sample.z - particles.points[ind_mid_particle, 2]) ** 2 <= loc_threshold_r ** 2)
@@ -91,7 +91,7 @@ for i in range(nod):
     particle_mask_list = []
     for i in range(5):
         particle_mask_list.append(
-            np.logical_and(sample.data > 0.1,
+            np.logical_and(sample.data > 0.5,
                                    (sample.x - particles.points[i, 0]) ** 2 +
                                    (sample.y - particles.points[i, 1]) ** 2 +
                                    (sample.z - particles.points[i, 2]) ** 2 <= loc_threshold_r ** 2)
@@ -133,7 +133,7 @@ for i in range(nod):
 
     # Scatter plot with sample purity as the color
     scatter = f2.scatter(stressII_masked.data, strainrateII_masked.data, c=sample_purity.data, s=33, cmap=plt.cm.magma, zorder=2)
-    cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.1)
+    cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.5)
     cbar.set_label('Sample Purity', fontsize=16)
 
     # Additional scatter plots
@@ -161,6 +161,141 @@ for i in range(nod):
     f2.set_xlim([1e6, 1e8])
     f2.set_ylim([1e-14, 1e-12])
     f2.grid()
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
+
+# Plotting particle locations
+figure = plt.figure(constrained_layout=True)
+figure.set_size_inches(9, 9)
+ax = figure.add_gridspec(1, 1)
+f2 = figure.add_subplot(ax[:, :])
+f2.tick_params(axis='x', labelsize=22)
+f2.tick_params(axis='y', labelsize=22)
+
+# Theory plot dislocation n=3.5
+f2.loglog(stress_theory, strainrate_theory, 'r--', label='dislocation creep \n Zhang et al., 2006; T=1273K')
+f2.loglog(stress_theory, strainrate_theory_newtonian, 'b--', label='diffusion creep; T=1273K')
+f2.loglog(stress_theory, strainrate_theory_loc, 'm-', label='dislocation creep \n Zhang et al., 2006; T=1073K')
+f2.loglog(stress_theory, strainrate_theory_loc_1473, 'r-', label='dislocation creep \n Zhang et al., 2006; T=1473K')
+
+# # Compute 2D histogram for point density
+# x = stressII_masked.data
+# y = strainrateII_masked.data
+# heatmap, xedges, yedges = np.histogram2d(x, y, bins=[200,150], range=[[1e6, 1e8], [1e-14, 1e-12]])
+
+# # Plot the heat map
+# heatmap = np.ma.masked_where(heatmap == 0, heatmap)  # Mask zero values for better visualization
+# extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+# heatmap_plot = f2.pcolormesh(xedges, yedges, heatmap.T, cmap='Blues', alpha=0.78, zorder=1)
+
+# # Add colorbar for the heat map
+# cbar_heatmap = figure.colorbar(heatmap_plot, ax=f2, orientation='vertical', shrink=0.8)
+# cbar_heatmap.set_label('Point Density', fontsize=16)
+
+
+# # Add contour of point density with color variation
+# X, Y = np.meshgrid(xedges[:-1], yedges[:-1])  # Create grid for contour
+# contour = f2.contour(X, Y, heatmap.T, levels=10, colors='black', linewidths=0.8, zorder=3)
+# contour_filled = f2.contourf(X, Y, heatmap.T, levels=10, cmap='plasma', alpha=0.6, zorder=2)
+
+# # Add contour labels with values
+# f2.clabel(contour, inline=True, fontsize=10, fmt='%d')
+
+# # Add colorbar for the contour
+# cbar_contour = figure.colorbar(contour_filled, ax=f2, orientation='vertical', shrink=0.8)
+# cbar_contour.set_label('Density Contour', fontsize=16)
+
+# # Define contour levels to limit the range
+# contour_levels = np.linspace(np.min(heatmap.data), np.max(heatmap.data), 6)  # Adjust these values as needed
+
+# # Add contour of point density with color variation and limited range
+# X, Y = np.meshgrid(xedges[:-1], yedges[:-1])  # Create grid for contour
+# contour = f2.contour(X, Y, heatmap.T, levels=contour_levels, colors='black', linewidths=0.8, zorder=3)
+# contour_filled = f2.contourf(X, Y, heatmap.T, levels=contour_levels, cmap='Blues', alpha=0.6, zorder=2)
+
+# # Add contour labels with values
+# f2.clabel(contour, inline=True, fontsize=20, fmt='%d',colors='k',zorder=5)
+
+# # Add colorbar for the contour
+# cbar_contour = figure.colorbar(contour_filled, ax=f2, orientation='vertical', shrink=0.8)
+# cbar_contour.set_label('Density Contour', fontsize=16)
+
+
+# # Scatter plot with sample purity as the color
+# scatter = f2.scatter(x, y, c=sample_purity.data, s=33, cmap=plt.cm.magma, zorder=2)
+# cbar = figure.colorbar(scatter, ax=f2, orientation='horizontal', shrink=0.5)
+# cbar.set_label('Sample Purity', fontsize=16)
+
+# # Additional scatter plots
+# f2.scatter(mean_stress, mean_strainrate, s=2000, color='black', alpha=1, label='mean all', marker='*')
+# f2.scatter(stressII_masked_particle.data, strainrateII_masked_particle.data, s=900, color='red', alpha=.9, label='mid-particle neighbors', marker='+', zorder=3)
+# mean_stress_mid_particle = np.mean(stressII_masked_particle.data)
+# mean_strainrate_mid_particle = np.mean(strainrateII_masked_particle.data)
+# f2.scatter(mean_stress_mid_particle, mean_strainrate_mid_particle, s=2222, color='red', alpha=.3, label='mean mid-parti', marker='o', zorder=2)
+
+# for i in range(5):
+#     f2.scatter(stressII_masked_particle_list[i].data, strainrateII_masked_particle_list[i].data, s=200, color=colors[i], alpha=.9, label='particle'+str(i)+'neighbors', marker='v', zorder=3)
+
+
+
+
+
+from scipy.ndimage import gaussian_filter
+
+# Compute 2D histogram for point density
+x = stressII_masked.data
+y = strainrateII_masked.data
+heatmap, xedges, yedges = np.histogram2d(x, y, bins=[200,150], range=[[1e6, 1e8], [1e-14, 1e-12]])
+
+# Apply Gaussian filter to smooth the heat map
+heatmap_smooth = gaussian_filter(heatmap, sigma=2)  # Adjust sigma for desired smoothness
+
+# Mask zero values for better visualization
+heatmap_smooth = np.ma.masked_where(heatmap_smooth == 0, heatmap_smooth)  
+extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+
+# Plot the smoothed heat map
+heatmap_plot = f2.imshow(heatmap_smooth.T, extent=extent, origin='lower', cmap='Blues', alpha=0.78, aspect='auto', zorder=1)
+
+# Add colorbar for the smoothed heat map
+cbar_heatmap = figure.colorbar(heatmap_plot, ax=f2, orientation='vertical', shrink=0.8)
+cbar_heatmap.set_label('Point Density', fontsize=16)
+
+# Define contour levels to limit the range
+contour_levels = np.linspace(np.min(heatmap_smooth), np.max(heatmap_smooth), 6)
+
+# Add contour of point density with color variation and limited range
+X, Y = np.meshgrid(xedges[:-1], yedges[:-1])  # Create grid for contour
+contour = f2.contour(X, Y, heatmap_smooth.T, levels=contour_levels, colors='black', linewidths=0.8, zorder=3)
+contour_filled = f2.contourf(X, Y, heatmap_smooth.T, levels=contour_levels, cmap='Blues', alpha=0.6, zorder=2)
+
+# Add contour labels with values
+f2.clabel(contour, inline=True, fontsize=20, fmt='%d', colors='k', zorder=5)
+
+# Add colorbar for the contour
+cbar_contour = figure.colorbar(contour_filled, ax=f2, orientation='vertical', shrink=0.8)
+cbar_contour.set_label('Density Contour', fontsize=16)
+
+
+# Log scale and labels
+f2.set_xscale('log')
+f2.set_yscale('log')
+f2.set_xlabel(r'$\sigma_{II}^s$ (Pa)', fontsize=22)
+f2.set_ylabel(r'$\epsilon_{II}^s (s^{-1})$', fontsize=22)
+f2.set_title(f'model: {exp_name} \n @ {(model_time[0] / sec_in_yr / 1e3):.0f} kyrs and strain of {strain_theory[0]:.1f}\n' +
+             f'mean strain rate: {mean_strainrate_mid_particle:.2e} ' +
+             r'$\mathrm{s^{-1}}$' + f', mean stress: {mean_stress_mid_particle:.2e} Pa \n' +
+             f'effective viscosity near mid-parti: {mean_stress_mid_particle / mean_strainrate_mid_particle:.1e} Pa*s', fontsize=16)
+f2.legend(fontsize=12, loc='lower right')
+f2.set_xlim([1e6, 1e8])
+f2.set_ylim([1e-14, 1e-12])
+f2.grid()
+
+plt.show()
+
+
 
    # 3D Plot with distance to theoretical curve
 log_stress = np.log10(stressII_masked.data)
@@ -191,7 +326,7 @@ cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_title('Filtered 3D Sample Points (Purity > 0.1, Distance to Theory)')
+ax.set_title('Filtered 3D Sample Points (Purity > 0.5, Distance to Theory)')
 plt.show()
 
 
@@ -214,7 +349,7 @@ cbar = plt.colorbar(sc, ax=ax, label='log_strainrate')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_title('Filtered 3D Sample Points (Purity > 0.1, strain rate)')
+ax.set_title('Filtered 3D Sample Points (Purity > 0.5, strain rate)')
 plt.show()
 
 # Cross-section plot at Y=0
@@ -239,7 +374,7 @@ ax.set_title('Cross-Section at Y=0')
 plt.show()
 
 # Cross-section plot at Y=0
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(12, 6))
 cross_section_mask = np.abs(points[sample_mask, 1]) < 1e-4  # Points close to Y=0
 # Scatter plot for the cross-section
 sc = ax.scatter(
@@ -255,6 +390,11 @@ cbar = plt.colorbar(sc, ax=ax, label='strain rate')
 ax.set_xlabel('X')
 ax.set_ylabel('Z')
 ax.set_title('Cross-Section at Y=0')
+ax.set_ylim([-0.0022,0.0022])
+#ax.set_aspect(0.85)
+# Set the aspect ratio of the plot area only
+ax.set_aspect('equal', adjustable='box')
+ax.grid()
 plt.show()
 
 # Cross-section plot at Y=0.0003
@@ -319,7 +459,7 @@ sc = ax.scatter(
     s=10
 )
 
-ax.scatter(mesh.points[:, 0], mesh.points[:, 2], color='grey', alpha=0.1, label='Mesh grid', s=1)
+ax.scatter(mesh.points[:, 0], mesh.points[:, 2], color='grey', alpha=0.82, label='Mesh grid', s=1)
 # Add colorbar
 cbar = plt.colorbar(sc, ax=ax, label='Proximity to Theoretical Line')
 ax.set_xlabel('X')
@@ -333,7 +473,7 @@ fig, ax = plt.subplots(figsize=(8, 6))
 ax.set_xlabel('sample purity')
 ax.set_ylabel('strain rate')
 sc = ax.scatter(sample_purity.data,strainrateII_masked.data,  c= distance_norm, s=3, cmap=plt.cm.magma, zorder=2)
-cbar = plt.colorbar(sc, ax=ax, orientation='vertical', shrink=0.1)
+cbar = plt.colorbar(sc, ax=ax, orientation='vertical', shrink=0.5)
 cbar.set_label('distance_norm', fontsize=16)
 
 # binned plot for above
@@ -344,7 +484,7 @@ fig, ax1 = plt.subplots(figsize=(10, 6))
 sc = ax1.scatter(sample_purity.data, distance_norm, c=strainrateII_masked.data, s=3, cmap=plt.cm.magma, zorder=2)
 ax1.set_xlabel('Sample Purity')
 ax1.set_ylabel('Distance Norm')
-cbar = plt.colorbar(sc, ax=ax1, orientation='vertical', shrink=0.1)
+cbar = plt.colorbar(sc, ax=ax1, orientation='vertical', shrink=0.5)
 cbar.set_label('Strain Rate', fontsize=16)
 
 # Create bins for sample purity with a window of 0.05
@@ -367,7 +507,7 @@ boxplot = ax1.boxplot(
     positions=bin_centers,  # Use bin centers for x-axis positions
     widths=0.04,  # Adjust width of boxes
     patch_artist=True,  # Allow filling boxes with color
-    boxprops=dict(facecolor='lightblue', alpha=0.1),  # Make boxes semi-transparent
+    boxprops=dict(facecolor='lightblue', alpha=0.82),  # Make boxes semi-transparent
     flierprops=dict(marker='o', markerfacecolor='black', markersize=2, markeredgecolor='black'),  # Customize outliers
     zorder=1  # Ensure boxes are behind the scatter plot
 )
@@ -381,9 +521,29 @@ ax1.xaxis.set_major_formatter(plt.FormatStrFormatter('%.2f'))
 
 # Adjust x-axis limits to fit the data
 ax1.set_xlim(left=min(bin_centers) - 0.05, right=max(bin_centers) + 0.05)
+ax1.set_ylim([0,5])
+
 
 # Add a legend
 ax1.legend(loc='upper right')
 
 plt.tight_layout()
 plt.show()
+
+
+
+
+
+# Plotting particle locations
+figure = plt.figure(constrained_layout=True)
+figure.set_size_inches(6, 4)
+ax = figure.add_gridspec(1, 1)
+f2 = figure.add_subplot(ax[:, :])
+f2.tick_params(axis='x', labelsize=22)
+f2.tick_params(axis='y', labelsize=22)
+
+
+plt.hist(distance_norm)
+plt.show()
+
+
